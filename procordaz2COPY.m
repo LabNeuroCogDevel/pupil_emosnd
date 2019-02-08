@@ -13,29 +13,35 @@ cd ('/Volumes/Zeus/MMY1_EmoSnd/pupil')
 %fname='B:/bea_res/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/Pupil Processing_GregSiegle/GregSiegle_Meeting_2009.07.08/EyeData_GoodWBlinks/10631_a_S_6'
 %fname='B:/BEA_RES/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/10631_Eye_Data/pupil_10631/pupil_10631_a_S_6'
 %fname='B:/bea_res/Personal/Sarah/fMRI_cogemosounds/10837/10837_EyeData/pupil_10837_run1_S'
-fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10370/20120918/Raw/EyeData/txt/10370.20120918.1.data.txt'
+fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10370/20120918/Raw/EyeData/txt/10370.20120918.1.data.txt';
 
 
-p=readasltextlunalab(fname,1,1,0,0)
+p=readasltextlunalab(fname,0,1,0,0); % must do rblinks to get BlinkTrials
 %p.TrialStarts=p.EventTicks(find(p.EventCodes<80));
 %SO: need add something that gets rid of starting 250s; sometimes new antis
 %will start with 210, 211, 212 AND END W/ 249
 
 %% segment into trials
-p.TrialStarts=p.EventTicks(find((p.EventCodes>29)  & (p.EventCodes<91)));
-p.TrialEnds=p.EventTicks(find(p.EventCodes>249))+35; % add 
-p.StimTypes=p.EventCodes(find((p.EventCodes>101)  & (p.EventCodes<199)));
-first=min(p.TrialStarts)
-p.TrialEnds=p.TrialEnds(p.TrialEnds>first)
-last=max(p.TrialStarts)
-i=find(p.TrialEnds>last)
-if length(i)>1
-    p.TrialEnds=p.TrialEnds(1:i(1))
-end
+% unique(p.EventCodes)' 
+% 30    60    70    80    90   131   132   133   134   250   254
+%           start            |           target      |   stop
+p.TrialStarts=p.EventTicks(p.EventCodes>29  & p.EventCodes<91);
+p.TrialEnds=p.EventTicks(p.EventCodes>249)+35; % add a bit to the end
+p.TrialStim=p.EventTicks(p.EventCodes>101  & p.EventCodes<199);
+p.StimTypes=p.EventCodes(p.EventCodes>101  & p.EventCodes<199);
+
+%% fix start/stop
+% remove ends before any starts
+[s,t,e,codes] = align_events(p);
+p.TrialStarts = s; p.TrialStim=t; p.TrialEnds=e; p.StimTypes=codes;
+
+%%
+
 p.StimLatencies=ones(size(p.StimTypes));
 p.TrialLengths=p.TrialEnds-p.TrialStarts;
-p.NumTrials=size(p.TrialStarts,1);
+p.NumTrials=size(p.TrialStarts,1); % should be 30 trials?
 p=segmentpupiltrials(p,0,5,92,0,1,4);
+
 p.stats.rts=ones(1,size(p.TrialStarts,1));
 %SO - Below is link to .m file that drops trials & makes bar graphs (figure 3)
 p.drops=dropbadtrials(p,1,-10000,5,4,0,0,.7);
