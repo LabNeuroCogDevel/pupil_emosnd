@@ -34,11 +34,11 @@ end
   end
   avgdata=avgdata(1:numpts);
 %  data.JustSmoothed=avgdata;
-  data.NoBlinks=rblinks(avgdata,regThreshold,slopeThreshold,extremeThreshold,numSamples,weightingWidth,outofrange)'; 
-
+  data.NoBlinks=rblinks(avgdata,regThreshold,slopeThreshold,extremeThreshold,numSamples,weightingWidth,outofrange)';
+  
   % second pass, which I do and Eric doesn't
-%SO - do not use std  
-%lowestlegal=median(data.NoBlinks)-4.2.*std(data.NoBlinks);
+  %SO - do not use std  
+  %lowestlegal=median(data.NoBlinks)-4.2.*std(data.NoBlinks);
   lowestlegal=median(data.NoBlinks)-5.*iqr(data.NoBlinks);
   needsadjusting=data.NoBlinks<lowestlegal;
 
@@ -61,8 +61,15 @@ end
 %  end
   
 
+  % PREVIOUSLY:
   % store where we found blinks
-  data.BlinkTimes=avgdata~=data.NoBlinks;
+  %data.BlinkTimes=avgdata~=data.NoBlinks;
+
+  % WF20190207 -- avgdata and NoBlinks are very often not the same!
+  % figure; plot(avgdata); hold on; plot(data.NoBlinks); plot(data.BlinkTimes.*mean(data.NoBlinks))
+  % why do we think it's a blink if they do not exactly agree
+  diff_thres = std(data.NoBlinks);
+  data.BlinkTimes=abs(avgdata-data.NoBlinks)>diff_thres;
 
   % fix blinks at beginning
   if data.BlinkTimes(1)
