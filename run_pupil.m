@@ -1,4 +1,5 @@
 %DONT USE THIS...USE procordaz2COPYfunction.m instead
+function [meancues, p] = run_pupil(fname)
 %% load the data
 %cd C:\greg\papers\ordaz-antisac\GregSiegle_Meeting_2009.07.08\EyeData_Good
 %fname='10651_a_P_6'
@@ -13,7 +14,9 @@ cd ('/Volumes/Zeus/MMY1_EmoSnd/pupil')
 %fname='B:/bea_res/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/Pupil Processing_GregSiegle/GregSiegle_Meeting_2009.07.08/EyeData_GoodWBlinks/10631_a_S_6'
 %fname='B:/BEA_RES/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/10631_Eye_Data/pupil_10631/pupil_10631_a_S_6'
 %fname='B:/bea_res/Personal/Sarah/fMRI_cogemosounds/10837/10837_EyeData/pupil_10837_run1_S'
-fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10370/20120918/Raw/EyeData/txt/10370.20120918.1.data.txt';
+
+
+% fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10370/20120918/Raw/EyeData/txt/10370.20120918.1.data.txt';
 
 
 p=readasltextlunalab(fname,0,1,0,0); % must do rblinks to get BlinkTrials
