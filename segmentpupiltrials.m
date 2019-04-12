@@ -70,8 +70,24 @@ for ct=1:numtrials
   end
 end
 
+% 20190412 - OR WF - want samples before sound onset -- this is outside
+%% start of PupilTrials
+% if onsettime given before trial, go into data
+if onsettime < 0
+    base_idx = data.TrialStarts + onsettime; % onset is negative - before trial start
+    end_idx = base_idx + baselength;
+    base_data = zeros(length(base_idx), baselength+1);
+    for ii=1:length(base_idx)
+        base_data(ii,:) = datatouse(base_idx(ii):end_idx(ii));
+    end
+else
+    % otherwise use trial data
+    % mean of 5samples of every trial
+    base_data = data.PupilTrials(:,0+onsettime:baselength+onsettime);
+end
 
-baseline=repmat(mean(data.PupilTrials(:,0+onsettime:baselength+onsettime)')',1,maxlen);
+baseline=repmat(mean(base_data')',1,maxlen); % flat line to remove from data
+
 data.NormedPupTrials=data.PupilTrials-baseline.*(1-(data.PupilTrials==0));
 data.NormedDetrendPupTrials=data.DetrendPupilTrials-baseline.*(1-(data.DetrendPupilTrials==0));
 if isfield(data,'AllSeconds')
