@@ -1,5 +1,7 @@
-%DONT USE THIS...USE procordaz2COPYfunction.m instead
-function [meancues, p] = run_pupil(fname)
+
+
+
+function[meancues, p] = run_pupil(fname)
 %% load the data
 %cd C:\greg\papers\ordaz-antisac\GregSiegle_Meeting_2009.07.08\EyeData_Good
 %fname='10651_a_P_6'
@@ -8,30 +10,31 @@ function [meancues, p] = run_pupil(fname)
 %cd C:\greg\papers\ordaz-antisac\GregSiegle_Meeting_2009.07.08\EyeData_GoodWBlinks
 %fname='10631_a_S_6'
 
-addpath(genpath('/Volumes/L/bea_res/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/Pupil Processing_GregSiegle/GregSiegle_Matlab/matlabtoolkit'))
-cd ('/Volumes/Zeus/MMY1_EmoSnd/pupil')
+
 
 %fname='B:/bea_res/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/Pupil Processing_GregSiegle/GregSiegle_Meeting_2009.07.08/EyeData_GoodWBlinks/10631_a_S_6'
 %fname='B:/BEA_RES/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/10631_Eye_Data/pupil_10631/pupil_10631_a_S_6'
 %fname='B:/bea_res/Personal/Sarah/fMRI_cogemosounds/10837/10837_EyeData/pupil_10837_run1_S'
 
 
-% fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10370/20120918/Raw/EyeData/txt/10370.20120918.1.data.txt';
+%fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10914/20120104/Raw/EyeData/txt/10914.20120104.2.data.txt';
 
 
-p=readasltextlunalab(fname,0,1,0,0); % must do rblinks to get BlinkTrials
+p=readasltextlunalab(fname,0,1,0,0,0); % must do rblinks to get BlinkTrials
 %p.TrialStarts=p.EventTicks(find(p.EventCodes<80));
 %SO: need add something that gets rid of starting 250s; sometimes new antis
 %will start with 210, 211, 212 AND END W/ 249
 
 %% segment into trials
 % unique(p.EventCodes)' 
+% 30 is first fixation ("ITI9") -- not a start code! 20190412
 % 30    60    70    80    90   131   132   133   134   250   254
 %           start            |           target      |   stop
 p.TrialStarts=p.EventTicks(p.EventCodes>29  & p.EventCodes<91);
 p.TrialEnds=p.EventTicks(p.EventCodes>249)+35; % add a bit to the end
 p.TrialStim=p.EventTicks(p.EventCodes>101  & p.EventCodes<199);
-p.StimTypes=p.EventCodes(p.EventCodes>101  & p.EventCodes<199);
+% p.StimTypes=p.EventCodes(p.EventCodes>101  & p.EventCodes<199);
+p.StimTypes=p.EventCodes(p.EventCodes>29  & p.EventCodes<91);
 
 %% fix start/stop
 % remove ends before any starts
@@ -130,8 +133,8 @@ end
 
 p.PupNoParallax=p.NoBlinks./cosd(visang);
 
-
-p2=segmentpupiltrials(p,0,5,92,0,1,4,0,p.PupNoParallax);
+% data,graphics,baselength,maxgoodlength,extrafancy,onsettime,stdcutoff,usedetrend,specialdata
+p2=segmentpupiltrials(p,0,5,92,0,-5,4,0,p.PupNoParallax);
 p.NormedNoParallaxTrials=p2.NormedPupTrials;
 p.NoParallaxConditionMeans=pupilcondmeans(p.NormedNoParallaxTrials,p.TrialTypes,p.Conditions,p.drops);
 figure(7); clf;
@@ -145,9 +148,19 @@ plot(p.TrialSeconds,p.NoParallaxConditionMeans(1,:),'-b')
 plot(p.TrialSeconds,p.NoParallaxConditionMeans(2,:),'-m')
 plot(p.TrialSeconds,p.NoParallaxConditionMeans(3,:),'-y')
 plot(p.TrialSeconds,p.NoParallaxConditionMeans(4,:),'-r')
+plot(p.TrialSeconds,p.NoParallaxConditionMeans(5,:),'-g')
 %%%%%%%%%%%%%%%%%
-legend('1','2','3','4')
+legend({'1','2','3','4','5'},'Location','northwest')
 title('No Parallax');
+
+[a,b,e]=fileparts(fname);
+fid=fopen(['/Volumes/Zeus/MMY1_EmoSnd/pupil/mean_cond/',b,'_condmeans',e],'w');
+for c=1:5
+    for i=1:length(p.TrialSeconds)
+        fprintf(fid,'%s %d %f %f\n',b,c,p.TrialSeconds(i),p.NoParallaxConditionMeans(c,i));
+    end
+end
+fclose(fid);
 
 %%
 % SO added to get MEAN TIME SERIES plot
@@ -178,9 +191,10 @@ meancue1=mean(p.NoParallaxConditionMeans(1,:));
 meancue2=mean(p.NoParallaxConditionMeans(2,:));
 meancue3=mean(p.NoParallaxConditionMeans(3,:));
 meancue4=mean(p.NoParallaxConditionMeans(4,:));
+meancue5=mean(p.NoParallaxConditionMeans(5,:));
 
-meancues=[meancue1 meancue2 meancue3 meancue4]
-
+meancues=[meancue1 meancue2 meancue3 meancue4 meancue5]
+end
 
 
 
