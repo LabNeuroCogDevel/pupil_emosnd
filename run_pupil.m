@@ -1,7 +1,4 @@
-
-
-
-function[meancues, p] = run_pupil(fname)
+function [meancues, p] = run_pupil(fname)
 %% load the data
 %cd C:\greg\papers\ordaz-antisac\GregSiegle_Meeting_2009.07.08\EyeData_Good
 %fname='10651_a_P_6'
@@ -136,7 +133,12 @@ p.PupNoParallax=p.NoBlinks./cosd(visang);
 % data,graphics,baselength,maxgoodlength,extrafancy,onsettime,stdcutoff,usedetrend,specialdata
 p2=segmentpupiltrials(p,0,5,92,0,-5,4,0,p.PupNoParallax);
 p.NormedNoParallaxTrials=p2.NormedPupTrials;
-p.NoParallaxConditionMeans=pupilcondmeans(p.NormedNoParallaxTrials,p.TrialTypes,p.Conditions,p.drops);
+
+% 20190415 - drop trials that jump too quickly
+p.tooQuick = any(abs(diff(p.NormedNoParallaxTrials')) > 70);
+
+% mean timeseries for each condition
+p.NoParallaxConditionMeans=pupilcondmeans(p.NormedNoParallaxTrials,p.TrialTypes,p.Conditions,p.drops | p.tooQuick );
 figure(7); clf;
 %plot(p.TrialSeconds,p.NoParallaxConditionMeans')
 %%%%%%%%%%%%%
@@ -193,7 +195,16 @@ meancue3=mean(p.NoParallaxConditionMeans(3,:));
 meancue4=mean(p.NoParallaxConditionMeans(4,:));
 meancue5=mean(p.NoParallaxConditionMeans(5,:));
 
-meancues=[meancue1 meancue2 meancue3 meancue4 meancue5]
+meancues=[meancue1 meancue2 meancue3 meancue4 meancue5];
+
+figure
+subplot(2,1,1)
+title('all trials')
+plot(p.TrialSeconds, p.NormedNoParallaxTrials(~p.drops&~p.tooQuick,:))
+subplot(2,1,2)
+plot(p.TrialSeconds, p.NoParallaxConditionMeans)
+title('cond average')
+suptitle(b)
 end
 
 
