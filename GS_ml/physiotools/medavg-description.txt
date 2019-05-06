@@ -1,0 +1,22 @@
+
+ Directory: smooth/
+ Tar Archive: smooth.tar
+ Zip Archive: smooth.zip
+
+ The SMOOTH function implements a method known as (3RSR)2H twice (see
+ Reference) to do a running median averaging.  For the sake of convient
+ programming, SMOOTH calls 3 smaller functions:
+
+ R3R:  to implement repeated running median
+ SR:   to implement splitting 2-wide peaks and valleys
+ H:    to implement hanning
+
+ These are helper functions, and should not be run directly.
+
+ Ref:  J.W. Tukey,  EXPLORATORY DATA ANALYSIS.
+ Addison-Wesley Publishing Co. 1977.  Chapter 7, 16.
+
+ Huy Le
+ huey@beck.mit.edu
+
+ 9/4/97

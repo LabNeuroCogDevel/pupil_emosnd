@@ -1,0 +1,48 @@
+function [acorr,kmin]=gutautocorr(X,k)
+% gets autocorrelation with SVD removed
+% for Buchwald-Guthrie (1992) style estimation
+% of minimum run length for significance
+% X is an N x T matrix (difference waveforms
+% within one group and pooled over both samples
+% for two groups)
+% usage: [acorr,kmin]=gutautocorr(X,k)
+% where k is the minimum eigan value from the
+% svd that should be used. By default, k=5.
+% With k=0, all possible k (to #rows in X)
+% are used and the minimum available autocorrelation
+% is returned.
+% With k=-1 no svd is performed.
+% Note that choice of k matters: see via:
+% for ct=1:100
+%  ga(ct)=gutautocorr(Z,ct);
+% end
+% plot(ga)
+
+if nargin<2, k=5; end
+
+if k>0
+  acorr=gtautoatk(X,k);
+  kmin=k;
+elseif k<0
+    
+else
+  for ct=1:size(X,1)
+    acorrs(ct)=gtautoatk(X,ct);
+  end
+  [acorr,kmin]=min(acorrs);
+end
+
+
+
+function acorr=gtautoatk(X,k)
+
+Xnomean=X-repmat(m(X),size(X,1),1);
+[L,G,R] = svd(Xnomean,0);
+Ls=L(:,1:k); Gs=G(1:k,1:k); Rs=R(:,1:k);
+Xs=Ls*Gs*Rs';
+Xn=Xnomean-Xs;
+
+for ct=1:size(X,1)
+   acorrs(ct)=autocorr(Xn(ct,:),1);
+end
+acorr=mean(acorrs);

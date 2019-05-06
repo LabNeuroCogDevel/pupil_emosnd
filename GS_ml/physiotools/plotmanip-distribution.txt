@@ -1,0 +1,14 @@
+This function plots a matrix in a scrolling window with sliders 
+that control the center of the plotted region and the zoom
+ratio. 
+
+Useage: plotmanipulator(matrix)
+
+Submitted files include:
+plotmanipulator.m & plotmanipulator.mat -- the graphic interface
+zoomslider.m -- code to control actions taken by the sliders
+
+Tested under Matlab 5.3
+
+Greg Siegle
+gsiegle@pitt.edu

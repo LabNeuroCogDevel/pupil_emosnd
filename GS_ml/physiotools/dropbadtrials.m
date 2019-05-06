@@ -1,0 +1,149 @@
+function [drops,Manualdrops,Manualadd]=dropbadtrials(data,graphics,lowrt,hirt,stdcutoff,dropblinkbaseline,manualbadfilename,blinkpercentfordrop,dodetrend,dropincorrect);
+% drops trials that are outside specified ranges or manually specified
+% usage: drops=pspandropbadtrials(data,graphics);
+
+if nargin<2, graphics=1; end
+if nargin<3, lowrt=.100; end
+if nargin<4, hirt=5.000; end
+if nargin<5, stdcutoff=4; end
+if nargin<6, dropblinkbaseline=0; end
+if ((nargin<7) | (isnumeric(manualbadfilename))), manualbadfilename=sprintf('%s.drops.txt',data.FileName(1:length(data.FileName)-4)); end
+if nargin<8, blinkpercentfordrop=.5; end
+if nargin<9, dodetrend=0; end
+if nargin<10, dropincorrect=0; end
+
+%graphics=1; lowrt=.1; hirt=8; stdcutoff=4; dropblinkbaseline=0;manualbadfilename='aaa';blinkpercentfordrop=.5;dodetrend=1;dropincorrect=0;
+
+
+drops=zeros(1,data.NumTrials);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get MANUAL DROPS
+if isfield(data,'Manualdrops')
+  Manualdrops=data.Manualdrops;
+else
+  Manualdrops=zeros(1,data.NumTrials);  
+end
+
+if isfield(data,'Manualadd')
+  Manualadd=data.Manualadd;
+else
+  Manualadd=zeros(1,data.NumTrials);  
+end
+
+% look for manual drop file in same directory as pupil file
+% and drop those trials if necessary
+if probe(manualbadfilename)
+    manualdropfromfile=load(manualbadfilename);
+    if ~isempty(manualdropfromfile)
+       Manualdrops(manualdropfromfile)=1;
+    end
+end
+drops=Manualdrops;
+
+if graphics 
+  figure('Name','Trial Diagnostic'); 
+  subplot(6,1,1); 
+  bar(drops); 
+  hold on; bar(drops & Manualadd,'g'); hold off
+  ylabel('manual'); 
+  axis([0 data.NumTrials 0 1]);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get SUSPECT (over std cutoff)
+if ~dodetrend
+   data.Suspect=max(abs(data.NormedPupTrials)')>stdcutoff.*mean(std(data.NormedPupTrials));
+else
+   data.Suspect=max(abs(data.NormedDetrendPupTrials)')>stdcutoff.*mean(std(data.NormedDetrendPupTrials));
+end
+
+data.Suspect = data.Suspect | ((max(data.NormedPupTrials')-min(data.NormedPupTrials'))==0); % the data is flat
+for ct=1:size(data.PupilTrials,1)
+  data.Suspect(ct) = data.Suspect(ct) | (sum(data.PupilTrials(ct,1:min(data.TrialLengths(ct),size(data.PupilTrials,2)))==0)>100);
+end
+
+% do this earlier
+drops=drops | data.Suspect; % drops 3 sd from the mean+
+fprintf('suspectdropnumber=%d\n',nnz(drops))
+if graphics 
+  subplot(6,1,2); 
+  bar(data.Suspect); 
+  hold on; bar(data.Suspect & Manualadd,'g'); hold off
+  ylabel('suspect'); 
+  axis([0 data.NumTrials 0 1]);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% drop UNREASONABLE RTS
+drops=drops | ((data.stats.rts<lowrt) | (data.stats.rts>hirt));
+fprintf('rtdropnumber=%d\n',nnz(drops))
+if graphics 
+  subplot(6,1,3); 
+  bar((data.stats.rts<lowrt) | (data.stats.rts>hirt)); 
+  hold on; bar(Manualadd & ((data.stats.rts<lowrt) | (data.stats.rts>hirt)),'g'); hold off;
+  ylabel('bad rt'); 
+  axis([0 data.NumTrials 0 1]);
+end
+dropblinkbaseline
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% drop TRIALS WITH >50% BLINKS 
+
+manyblinks=(sum(data.BlinkTrials')>blinkpercentfordrop.*(size(data.BlinkTrials,2)));
+drops=drops | manyblinks;
+fprintf('percentdropnumber=%d\n',nnz(drops))
+if graphics subplot(6,1,4); 
+  bar(manyblinks);
+  hold on; bar(manyblinks & Manualadd, 'g'); hold off;
+  ylabel(sprintf('> %d%% blinks',round(blinkpercentfordrop.*100))); 
+end
+
+% drop short trials
+%drops=drops | (sum((data.PupilTrials(:,1:210)==0)')>1);
+%if graphics subplot(6,1,5); bar((sum((data.PupilTrials(:,1:210)==0)')>1)); ylabel('short trial'); end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% drop blinks at baseline
+if dropblinkbaseline
+  drops=drops | (sum(data.BlinkTrials(:,1:10)')>2);
+  fprintf('baselinedropnumber=%d\n',nnz(drops))
+  if graphics subplot(6,1,5); 
+    bar((sum(data.BlinkTrials(:,1:10)')>2)); 
+    hold on; bar(Manualadd & (sum(data.BlinkTrials(:,1:10)')>2),'g'); hold off
+    ylabel('blink at baseline'); end
+else
+  if graphics subplot(6,1,5); 
+    bar((sum(data.BlinkTrials(:,1:10)')>2),'r'); 
+    hold on; bar(Manualadd & (sum(data.BlinkTrials(:,1:10)')>2),'g'); hold off;
+    ylabel('blink at baseline'); 
+  end
+end  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% drop INCORRECT
+if isfield(data,'behav') & isfield(data.behav,'correct')
+  if dropincorrect 
+    drops=drops | (1-data.behav.correct(1:length(drops))');
+    fprintf('incorrectdropnumber=%d\n',nnz(drops))
+    if graphics 
+      subplot(6,1,6); 
+      bar(1-data.behav.correct'); 
+      hold on; bar(Manualadd & (1-data.behav.correct'),'g');  hold off;
+      ylabel('Incorrect'); 
+    end
+  else
+    if graphics
+      subplot(6,1,6); 
+      bar(1-data.behav.correct','r'); 
+      if length(data.behav.correct)==length(Manualadd)
+        hold on; bar(Manualadd & (1-data.behav.correct'),'g'); hold off;
+      else
+	fprintf('NB: # of pupil trials does NOT match number of behavioral trials\n');
+      end
+      ylabel('Incorrect'); 
+    end
+  end  
+end
+
+
