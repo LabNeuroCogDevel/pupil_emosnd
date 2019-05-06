@@ -89,6 +89,8 @@ end
 baseline=repmat(mean(base_data')',1,maxlen); % flat line to remove from data
 
 data.NormedPupTrials=data.PupilTrials-baseline.*(1-(data.PupilTrials==0));
+% TODO=fix this, baseline isn't at same scale as detrended data - this is
+% not used
 data.NormedDetrendPupTrials=data.DetrendPupilTrials-baseline.*(1-(data.DetrendPupilTrials==0));
 if isfield(data,'AllSeconds')
   data.TrialSeconds=data.AllSeconds(1:maxlen)';

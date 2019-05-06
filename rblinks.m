@@ -6,9 +6,13 @@ function[noblinks]=rblinks(data,regThreshold,slopeThreshold,extremeThreshold,num
 
 if nargin < 7, outofrange=Inf; end
 if nargin < 6, weightingWidth=5; end
+% not used
 if nargin < 5, numSamples=10; end
 if nargin < 4, extremeThreshold=1; end
+% extremeThreshold max=5 (higher gives error)
+% extremeThreshold: higher number=more liberal threshold
 if nargin < 3, slopeThreshold=.2; end
+% slopeThreshold: higher number=more liberal threshold
 if nargin < 2, regThreshold=.3; end
 if nargin < 1, fprintf(-1,'Need at least a data array'); noblinks=-1; return; end
 
@@ -33,6 +37,8 @@ EndBlink=1;
 StartBlink=0;
 
 datamd=median(data); lbd=datamd-outofrange; ubd=datamd+outofrange;
+
+allReliable=[];
 
 for count=1:numSamples:size(data,2)-numSamples
    SumXY=0;
@@ -64,6 +70,8 @@ for count=1:numSamples:size(data,2)-numSamples
        Intercept=(SumY-Slope*SumX)/numSamples;
      end
    end
+   
+   allReliable(count)=Reliable;
    % get regression threshold
    % sufficiently far deviations are blinks
    if Reliable
@@ -83,7 +91,7 @@ for count=1:numSamples:size(data,2)-numSamples
 	 EndBlink=EndBlink-(size(data,2)-noblinkindex)
        end
 %      fprintf(1,'%d vs %d w/ %d\n', size(noblinkindex: ...
-%					  noblinkindex+EndBlink-1), ...
+%GJS					  noblinkindex+EndBlink-1), ...
 %	                                 size(storage(1:EndBlink)), EndBlink);
        noblinks(noblinkindex:noblinkindex+EndBlink-1)=storage(1:EndBlink);
        noblinkindex=noblinkindex+EndBlink-1;
@@ -107,7 +115,11 @@ while(noblinks(index)==0)
 end
 noblinks(index:size(noblinks,2))=noblinks(index-1);
 
-
+figure
+plot(data);
+hold on
+plot(allReliable*50)
+plot(noblinks)
 return
 
 % known bugs

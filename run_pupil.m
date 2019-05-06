@@ -7,14 +7,16 @@ function [meancues, p] = run_pupil(fname)
 %cd C:\greg\papers\ordaz-antisac\GregSiegle_Meeting_2009.07.08\EyeData_GoodWBlinks
 %fname='10631_a_S_6'
 
-
+% addpath(genpath('/Volumes/L/bea_res/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/Pupil Processing_GregSiegle/GregSiegle_Matlab/matlabtoolkit'))
 
 %fname='B:/bea_res/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/Pupil Processing_GregSiegle/GregSiegle_Meeting_2009.07.08/EyeData_GoodWBlinks/10631_a_S_6'
 %fname='B:/BEA_RES/Oxford Eye Experiments/CogEmotStudy_Data/CogEmotStudy_Eye_Data/10631_Eye_Data/pupil_10631/pupil_10631_a_S_6'
 %fname='B:/bea_res/Personal/Sarah/fMRI_cogemosounds/10837/10837_EyeData/pupil_10837_run1_S'
 
+% fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10914/20120104/Raw/EyeData/txt/10914.20120104.2.data.txt';
+%run_pupil('/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10914/20120104/Raw/EyeData/txt/10914.20120104.2.data.txt');
 
-%fname='/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10914/20120104/Raw/EyeData/txt/10914.20120104.2.data.txt';
+%run_pupil('/Volumes/L/bea_res/Data/Tasks/CogEmoSoundsBasic/10370/20120918/Raw/EyeData/txt/10370.20120918.4.data.txt');
 
 
 p=readasltextlunalab(fname,0,1,0,0,0); % must do rblinks to get BlinkTrials
@@ -43,7 +45,9 @@ p.TrialStarts = s; p.TrialStim=t; p.TrialEnds=e; p.StimTypes=codes;
 p.StimLatencies=ones(size(p.StimTypes));
 p.TrialLengths=p.TrialEnds-p.TrialStarts;
 p.NumTrials=size(p.TrialStarts,1); % should be 30 trials?
-p=segmentpupiltrials(p,0,5,92,0,1,4);
+%p=segmentpupiltrials(p,0,5,92,0,1,4);
+%OR: I think that the onset time arg (1) needs to be -5?
+p=segmentpupiltrials(p,0,5,92,0,-4,4);
 
 p.stats.rts=ones(1,size(p.TrialStarts,1));
 %SO - Below is link to .m file that drops trials & makes bar graphs (figure 3)
@@ -135,7 +139,7 @@ p2=segmentpupiltrials(p,0,5,92,0,-5,4,0,p.PupNoParallax);
 p.NormedNoParallaxTrials=p2.NormedPupTrials;
 
 % 20190415 - drop trials that jump too quickly
-p.tooQuick = any(abs(diff(p.NormedNoParallaxTrials')) > 70);
+p.tooQuick = any(abs(diff(p.NormedNoParallaxTrials')) > 15);
 
 % mean timeseries for each condition
 p.NoParallaxConditionMeans=pupilcondmeans(p.NormedNoParallaxTrials,p.TrialTypes,p.Conditions,p.drops | p.tooQuick );
@@ -156,13 +160,21 @@ legend({'1','2','3','4','5'},'Location','northwest')
 title('No Parallax');
 
 [a,b,e]=fileparts(fname);
+
+%% capture trial wise outputs
+b
+outmat=['/Volumes/Zeus/MMY1_EmoSnd/pupil/mean_cond/',b, '_NoParallaxTrials.mat'];
+save(outmat, 'p');
+
+%% save means
 fid=fopen(['/Volumes/Zeus/MMY1_EmoSnd/pupil/mean_cond/',b,'_condmeans',e],'w');
 for c=1:5
     for i=1:length(p.TrialSeconds)
-        fprintf(fid,'%s %d %f %f\n',b,c,p.TrialSeconds(i),p.NoParallaxConditionMeans(c,i));
+        fprintf(fid,'%s %d %f %f\n',b,c,p.TrialSeconds(i),p.NormedNoParallaxTrials(c,i));
     end
 end
 fclose(fid);
+
 
 %%
 % SO added to get MEAN TIME SERIES plot
@@ -173,7 +185,7 @@ fclose(fid);
 %outliers were removed.  
 %SO I'm going with p.meanTimeSeries.  Better is WORSE!
 
-p.meanTimeSeries=mean(p.NoParallaxConditionMeans)
+p.meanTimeSeries=mean(p.NoParallaxConditionMeans);
 figure(8); clf;
 hold on
 plot(p.TrialSeconds,p.meanTimeSeries,'-b')
@@ -206,10 +218,3 @@ plot(p.TrialSeconds, p.NoParallaxConditionMeans)
 title('cond average')
 suptitle(b)
 end
-
-
-
-
-
-
-
